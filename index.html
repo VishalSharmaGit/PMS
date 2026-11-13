@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+
+<head>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23222'/><rect x='20' y='55' width='12' height='25' fill='%23EA4335'/><rect x='38' y='40' width='12' height='40' fill='%23FBBC05'/><rect x='56' y='25' width='12' height='55' fill='%2334A853'/><rect x='74' y='15' width='12' height='65' fill='%234285F4'/></svg>">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Production Management System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="loginScreen" class="login-wrap">
+    <form class="glass-card login-card" onsubmit="submitLogin(event)">
+      <div class="login-mark">🧵</div>
+      <h1>Production Management System</h1>
+      <p>Workers: enter your Worker ID and PIN.<br>Admins / supervisors: enter your email and password.</p>
+
+      <label>Worker ID or email<input id="loginIdentifier" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></label>
+
+      <label>PIN or password<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+
+      <p id="loginError" style="color:#c13d56;font-size:13px;min-height:18px;"></p>
+      <button class="primary full" type="submit">Sign in</button>
+      <small>You stay signed in on this device until you press Sign out.</small>
+    </form>
+  </div>
+
+  <div id="app" hidden>
+    <nav class="navbar"><div class="nav-container"><div class="nav-brand"><b>PMS</b><span class="brand-version">v1.1</span></div><div class="nav-user"><span id="userDisplay"></span><span id="userRole" class="user-role"></span><button class="text-btn" onclick="signOut()">Sign out</button></div></div></nav>
+    <div class="tabs-container"><div class="tabs-scroll">
+      <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab manager" data-tab="assign" onclick="switchTab('assign')">Assign work</button>
+      <button class="tab" data-tab="tasks" onclick="switchTab('tasks')">My tasks</button>
+      <button class="tab manager" data-tab="workers" onclick="switchTab('workers')">Workers</button>
+      <button class="tab admin" data-tab="reports" onclick="switchTab('reports')">Reports</button>
+    </div></div>
+    <main id="mainContent"><div id="tabContent"><div class="loading-spinner"><div class="spinner"></div></div></div></main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
