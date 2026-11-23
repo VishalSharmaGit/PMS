@@ -1,5 +1,3 @@
-
-
 /* ------------------------- Tab cache-and-refresh engine ------------------------- */
 // Generic pattern: first visit to a tab does a real fetch and shows a spinner.
 // Every later visit paints instantly from cache, then quietly refetches in the
@@ -277,50 +275,34 @@ function dashboard(c) {
   }, document.querySelector('#dashboardContent'));
 }
 
+/* Linked dropdowns: each list offers only values that exist together with the other lists' current choices
+   (pick a process -> only workers who did that process; pick a worker -> only that worker's processes; and so on). */
+function cascadeSelects(items, defs) {
+  const sel = defs.map(d => document.querySelector(d.id));
+  const chosen = sel.map(el => (el ? el.value : ''));
+  defs.forEach((d, i) => {
+    if (!sel[i]) return;
+    const pool = items.filter(t => defs.every((o, j) => j === i || !chosen[j] || o.field(t) === chosen[j]));
+    const values = [...new Set(pool.map(d.field).filter(Boolean))].sort();
+    if (chosen[i] && !values.includes(chosen[i])) values.push(chosen[i]);     // never drop the current choice
+    sel[i].innerHTML = `<option value="">${esc(d.all)}</option>` +
+      values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    sel[i].value = chosen[i];
+  });
+}
+const taskWorker  = t => String(t['Worker Name'] || '').trim();
+const taskProcess = t => String(t.Process || '').trim();
+const taskFms     = t => String(t['FMS ID'] || '').trim();
+
 function populateDashboardFilters() {
-
-  const tasks = state.dashboardTasks || [];
-
-  const workers = [
-    ...new Set(
-      tasks
-        .map(t => String(t['Worker Name'] || '').trim())
-        .filter(Boolean)
-    )
-  ].sort();
-
-  const processes = [
-    ...new Set(
-      tasks
-        .map(t => String(t.Process || '').trim())
-        .filter(Boolean)
-    )
-  ].sort();
-
-  const workerSelect =
-    document.querySelector('#dashboardWorker');
-
-  const processSelect =
-    document.querySelector('#dashboardProcess');
-
-  if (workerSelect) {
-    workerSelect.innerHTML =
-      `<option value="">All workers</option>` +
-      workers
-        .map(w => `<option value="${esc(w)}">${esc(w)}</option>`)
-        .join('');
-  }
-
-  if (processSelect) {
-    processSelect.innerHTML =
-      `<option value="">All processes</option>` +
-      processes
-        .map(p => `<option value="${esc(p)}">${esc(p)}</option>`)
-        .join('');
-  }
+  cascadeSelects(state.dashboardTasks || [], [
+    { id: '#dashboardWorker',  field: taskWorker,  all: 'All workers' },
+    { id: '#dashboardProcess', field: taskProcess, all: 'All processes' }
+  ]);
 }
 
 function filterDashboard() {
+  populateDashboardFilters();
   renderDashboardFiltered();
   if (histFull.dashboard) return;
   const from = document.querySelector('#dashboardDateFrom')?.value || '';
@@ -364,12 +346,12 @@ function renderDashboardFiltered() {
     // ---------------- Worker ----------------
     const workerMatch =
       !worker ||
-      String(task['Worker Name'] || '') === worker;
+      taskWorker(task) === worker;
 
     // ---------------- Process ----------------
     const processMatch =
       !process ||
-      String(task.Process || '') === process;
+      taskProcess(task) === process;
 
     // ---------------- Date Range ----------------
     let dateMatch = true;
@@ -612,66 +594,11 @@ function tasks(c) {
 }
 
 function populateMyTaskFilters() {
-
-  const items = state.myTasks || [];
-
-  const workers = [
-    ...new Set(
-      items
-        .map(t => String(t['Worker Name'] || '').trim())
-        .filter(Boolean)
-    )
-  ].sort();
-
-  const processes = [
-    ...new Set(
-      items
-        .map(t => String(t.Process || '').trim())
-        .filter(Boolean)
-    )
-  ].sort();
-
-  const workerSelect =
-    document.querySelector('#myTaskWorker');
-
-  const processSelect =
-    document.querySelector('#myTaskProcess');
-  
-  const fmsSelect =
-    document.querySelector('#myTaskFMS');
-
-
-  if (workerSelect) {
-    workerSelect.innerHTML =
-      `<option value="">All workers</option>` +
-      workers.map(name =>
-        `<option value="${esc(name)}">${esc(name)}</option>`
-      ).join('');
-  }
-
-  if (fmsSelect) {
-    const fmsIds = [
-      ...new Set(
-        items
-          .map(t => String(t['FMS ID'] || '').trim())
-          .filter(Boolean)
-      )
-    ].sort();
-
-    fmsSelect.innerHTML =
-      `<option value="">All FMS</option>` +
-      fmsIds.map(id =>
-        `<option value="${esc(id)}">${esc(id)}</option>`
-      ).join('');
-  }
-
-  if (processSelect) {
-    processSelect.innerHTML =
-      `<option value="">All processes</option>` +
-      processes.map(process =>
-        `<option value="${esc(process)}">${esc(process)}</option>`
-      ).join('');
-  }
+  cascadeSelects(state.myTasks || [], [
+    { id: '#myTaskWorker',  field: taskWorker,  all: 'All workers' },
+    { id: '#myTaskProcess', field: taskProcess, all: 'All processes' },
+    { id: '#myTaskFMS',     field: taskFms,     all: 'All FMS' }
+  ]);
 }
 
 function setMyTaskStatus(status) {
@@ -691,6 +618,7 @@ function setMyTaskStatus(status) {
 }
 
 function filterMyTasks() {
+  populateMyTaskFilters();
   renderMyTasks();
   if (histFull.tasks) return;
   const from = document.querySelector('#myTaskDateFrom')?.value || '';
@@ -732,7 +660,7 @@ function renderMyTasks() {
     // ---------------- FMS ----------------
     const fmsMatch =
       !fms ||
-      String(task['FMS ID'] || '') === fms;
+      taskFms(task) === fms;
     // ---------------- STATUS ----------------
     const taskStatus = String(task.Status || '').toUpperCase();
     const statusMatch =
@@ -743,12 +671,12 @@ function renderMyTasks() {
     // ---------------- WORKER ----------------
     const workerMatch =
       !worker ||
-      String(task['Worker Name'] || '') === worker;
+      taskWorker(task) === worker;
 
     // ---------------- PROCESS ----------------
     const processMatch =
       !process ||
-      String(task.Process || '') === process;
+      taskProcess(task) === process;
 
     // ---------------- ORDER ----------------
     const orderMatch =
@@ -1635,6 +1563,37 @@ function closeWorkerHistory(event) {
     ?.remove();
 }
 
+/* Google Drive "open?id=" / "file/d/ID/view" / "uc?id=" links are web PAGES, not pictures.
+   Convert them to Drive's thumbnail image URL so the browser can show them. Other URLs are used as they are. */
+function imageSrc(url, size) {
+  const u = String(url || '').trim();
+  if (!/^https?:\/\//i.test(u)) return '';
+  const m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?(?:[^#]*&)?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)([\w-]{10,})/i)
+         || u.match(/docs\.google\.com\/uc\?(?:[^#]*&)?id=([\w-]{10,})/i)
+         || u.match(/lh3\.googleusercontent\.com\/d\/([\w-]{10,})/i);
+  return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w' + (size || 400) : u;
+}
+
+/* Click a thumbnail -> large preview. Click outside, press Esc, or use x to close. */
+function openImageViewer(el) {
+  closeImageViewer();
+  const small = el.getAttribute('src'), full = el.dataset.full || small;
+  const box = document.createElement('div');
+  box.id = 'imageViewer';
+  box.className = 'image-viewer';
+  box.innerHTML = `<button class="image-viewer-close" aria-label="Close" onclick="closeImageViewer()">&times;</button>
+    <img alt="Order image" src="${esc(small)}" referrerpolicy="no-referrer">`;
+  box.addEventListener('click', e => { if (e.target === box) closeImageViewer(); });
+  document.body.appendChild(box);
+  const big = box.querySelector('img');
+  const hi = new Image();                       // show the small one at once, swap to the sharp one when it has loaded
+  hi.referrerPolicy = 'no-referrer';
+  hi.onload = () => { if (document.body.contains(box)) big.src = full; };
+  hi.src = full;
+}
+function closeImageViewer() { document.querySelector('#imageViewer')?.remove(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImageViewer(); });
+
 function assign(c) {
   c.innerHTML = `<section class="page-head"><div><h1>Assign work</h1><p>Select a pending FMS production step and allocate it.</p></div>
     <button class="secondary" onclick="loadPending()">Refresh</button></section>
@@ -1668,10 +1627,11 @@ function pendingRows(items) {
 
     const index = state.pending.indexOf(item);
 
-    const image = item.imageUrl
+    const image = imageSrc(item.imageUrl)
       ? `<img class="order-image"
-          src="${esc(item.imageUrl)}"
-          alt="Order image"
+          src="${esc(imageSrc(item.imageUrl))}" data-full="${esc(imageSrc(item.imageUrl, 1600))}"
+          alt="Order image" title="Click to enlarge" loading="lazy" referrerpolicy="no-referrer"
+          onclick="openImageViewer(this)"
           onerror="this.outerHTML='<span class=&quot;no-image&quot;>No image</span>'">`
       : '<span class="no-image">No image</span>';
 
