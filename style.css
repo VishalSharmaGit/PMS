@@ -1453,3 +1453,22 @@
       white-space: nowrap
     }
   }
+
+/* ---- click-to-enlarge image preview ---- */
+.order-image { cursor: zoom-in; }
+.image-viewer {
+  position: fixed; inset: 0; z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; background: rgba(15, 18, 30, 0.82);
+  animation: imageViewerIn .15s ease-out;
+}
+.image-viewer img {
+  max-width: min(92vw, 1100px); max-height: 88vh; object-fit: contain;
+  border-radius: 12px; background: #fff; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+.image-viewer-close {
+  position: absolute; top: 16px; right: 20px; width: 42px; height: 42px;
+  border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.95);
+  color: #1a1d2e; font-size: 26px; line-height: 1; cursor: pointer;
+}
+@keyframes imageViewerIn { from { opacity: 0; } to { opacity: 1; } }
